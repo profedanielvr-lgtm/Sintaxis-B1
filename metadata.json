@@ -1,0 +1,7 @@
+{
+  "name": "Fontys - Tutor de análisis sintáctico",
+  "description": "Un tutor impulsado por IA para ayudar a los estudiantes a analizar oraciones complejas en español, siguiendo la metodología de sintaxis de Fontys Hogeschool. Sube una oración y recibe orientación paso a paso.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
