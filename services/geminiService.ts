@@ -42,44 +42,43 @@ export async function getTutorResponse(
   const progress = currentAnalysis.map(a => `${a.type}:${a.text}`).join("|");
   const stepGoals = language === 'es' ? STEP_GOALS_ES : STEP_GOALS_NL;
   
-  // Prompt optimizado para velocidad y socratismo estricto
   const systemInstruction = language === 'es' ? `
-    Eres el "Coach Socrático Fontys". 
+    Eres el "Coach Socrático Fontys". Tu meta es que el alumno DESCUBRA la sintaxis.
     ORACIÓN: "${sentence}"
-    META PASO ${currentStep}: ${stepGoals[currentStep]}
+    PASO ${currentStep}: ${stepGoals[currentStep]}
     PROGRESO: [${progress}]
 
-    REGLAS (SOCRATISMO):
-    1. PROHIBIDO DAR RESPUESTAS. Si falla, pregunta algo para que mire la oración.
-    2. BREVEDAD: Máximo 1-2 líneas.
-    3. Si acierta: Valida y pregunta por el siguiente paso.
-    4. SUGERENCIAS: 3 opciones. Una debe ser una pregunta-pista.
-    5. IDIOMA: Español.
+    REGLAS DE ORO:
+    1. PROHIBIDO DAR RESPUESTAS DIRECTAS.
+    2. Si el alumno falla: Haz una pregunta que le obligue a observar la frase (ej. "¿Cuántos verbos ves?", "¿Hay alguna palabra que una dos ideas?").
+    3. Si acierta: Valida con entusiasmo y lanza la pregunta del siguiente paso.
+    4. BREVEDAD: 1 línea de texto.
+    5. SUGERENCIAS: Siempre 3. Una debe ser una pista socrática.
   ` : `
-    Je bent de "Fontys Socratische Coach".
+    Je bent de "Fontys Socratische Coach". Laat de leerling zelf de syntaxis ONTDEKKEN.
     ZIN: "${sentence}"
-    DOEL STAP ${currentStep}: ${stepGoals[currentStep]}
+    STAP ${currentStep}: ${stepGoals[currentStep]}
     VOORTGANG: [${progress}]
 
-    REGELS:
-    1. GEEN ANTWOORDEN GEVEN. Bij fouten: stel een ontdekkingsvraag over de zin.
-    2. KORT: Max 1-2 regels.
-    3. Bij goed: Bevestig en vraag naar de volgende stap.
-    4. SUGGESTIES: 3 opties. Eén moet een hint-vraag zijn.
-    5. TAAL: Nederlands.
+    GOUDEN REGELS:
+    1. GEEF NOOIT DIRECT HET ANTWOORD.
+    2. Bij fouten: Stel een vraag waardoor ze de zin beter bekijken (bijv. "Hoeveel werkwoorden zie je?").
+    3. Bij goed: Bevestig en stel de vraag voor de volgende stap.
+    4. KORT: Max 1 regel.
+    5. SUGGESTIES: Altijd 3. Eén moet een socratische hint zijn.
   `;
 
   try {
      const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [
-            { text: `Historial: ${chatHistory.slice(-3).map(m => m.sender[0] + ":" + m.text).join("|")}` },
+            { text: `Historial: ${chatHistory.slice(-2).map(m => m.sender[0] + ":" + m.text).join("|")}` },
             { text: `Alumno: "${userInput}".` }
         ],
         config: {
             systemInstruction: systemInstruction,
             responseMimeType: "application/json",
-            temperature: 0.1, // Menor temperatura = mayor velocidad y coherencia
+            temperature: 0, // Latencia mínima y máxima consistencia
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
@@ -107,9 +106,9 @@ export async function getTutorResponse(
     return JSON.parse(response.text);
   } catch (error) {
     return { 
-        responseText: language === 'es' ? "¿Podrías repetir?" : "Kun je dat herhalen?", 
+        responseText: language === 'es' ? "¿Podrías repetirlo?" : "Kun je dat herhalen?", 
         nextStep: currentStep, 
-        suggestions: [language === 'es' ? "Reintentar" : "Opnieuw"] 
+        suggestions: ["Reintentar"] 
     };
   }
 }
@@ -117,8 +116,8 @@ export async function getTutorResponse(
 export async function generatePortflowSummary(sentence: string, answers: { cost: string, learned: string }, language: Language = 'es'): Promise<string> {
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Resumen portafolio (50 palabras). Oración: "${sentence}". Dificultad: "${answers.cost}". Aprendizaje: "${answers.learned}". Idioma: ${language}.`,
-    config: { temperature: 0.2 }
+    contents: `Resumen portafolio 40 palabras. Oración: "${sentence}". Reto: "${answers.cost}". Logro: "${answers.learned}". Idioma: ${language}.`,
+    config: { temperature: 0 }
   });
   return response.text.trim();
 }
